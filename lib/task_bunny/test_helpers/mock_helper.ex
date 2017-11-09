@@ -40,15 +40,17 @@ defmodule TaskBunny.TestHelpers.MockHelper do
   end
 
   @doc """
-  Check if the job is enqueued with given condition
+  Check if the job is enqueued with given condition. If `ensure_loaded` is set, it expects `job`
+  to be a module and will ensure it is properly loaded. Otherwise, `job` should be a string version of
+  the module name.
   """
-  def enqueued?(job, payload \\ nil) do
+  def enqueued?(job, payload \\ nil, ensure_loaded \\ false) do
     history = :meck.history(Publisher)
 
     queued = Enum.find history, fn ({_pid, {_module, :publish!, args}, _ret}) ->
       case args do
         [_h, _q, message | _] ->
-          {:ok, json} = Message.decode(message)
+          {:ok, json} = if (ensure_loaded), do: Message.decode(message), else: Poison.decode(message)
           json["job"] == job && (is_nil(payload) || json["payload"] == payload)
         _ -> false
       end
