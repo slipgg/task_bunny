@@ -34,8 +34,12 @@ defmodule TaskBunny.Config do
   """
   @spec connect_options(host :: atom) :: list | String.t
   def connect_options(host) do
-    hosts_config()[host][:connect_options] ||
-      raise ConfigError, message: "Can not find host '#{host}' in config"
+    options = hosts_config()[host][:connect_options]
+    cond do
+      is_list(options) -> Enum.random(options)
+      is_binary(options) -> options
+      true -> raise ConfigError, message: "Can not find host '#{host}' in config"
+    end
   end
 
   @doc """
